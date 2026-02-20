@@ -22,6 +22,7 @@ import { resolveAgentRoute } from "../routing/resolve-route.js";
 import { resolveThreadSessionKeys } from "../routing/session-key.js";
 import { withTelegramApiErrorLogging } from "./api-logging.js";
 import { firstDefined, isSenderAllowed, normalizeAllowFromWithStore } from "./bot-access.js";
+import { handleTlvcCallbackQuery } from "./bot-message.js";
 import { RegisterTelegramHandlerParams } from "./bot-native-commands.js";
 import { MEDIA_GROUP_TIMEOUT_MS, type MediaGroupEntry } from "./bot-updates.js";
 import { resolveMedia } from "./bot/delivery.js";
@@ -283,6 +284,14 @@ export const registerTelegramHandlers = ({
     }
     if (shouldSkipUpdate(ctx)) {
       return;
+    }
+    try {
+      const handled = await handleTlvcCallbackQuery(bot, callback);
+      if (handled) {
+        return;
+      }
+    } catch {
+      /* fall through */
     }
     // Answer immediately to prevent Telegram from retrying while we process
     await withTelegramApiErrorLogging({
