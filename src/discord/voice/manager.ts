@@ -437,7 +437,7 @@ export class DiscordVoiceManager {
       this.sessions.delete(guildId);
     });
 
-    player.on("error", (err) => {
+    player.on("error", (err: unknown) => {
       logger.warn(`discord voice: playback error: ${formatErrorMessage(err)}`);
     });
 
@@ -512,7 +512,7 @@ export class DiscordVoiceManager {
         duration: SILENCE_DURATION_MS,
       },
     });
-    stream.on("error", (err) => {
+    stream.on("error", (err: unknown) => {
       logger.warn(`discord voice: receive error: ${formatErrorMessage(err)}`);
     });
 
