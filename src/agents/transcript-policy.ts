@@ -14,7 +14,8 @@ export type TranscriptPolicy = {
     allowBase64Only?: boolean;
     includeCamelCase?: boolean;
   };
-  normalizeAntigravityThinkingBlocks: boolean;
+  sanitizeThinkingSignatures: boolean;
+  dropThinkingBlocks: boolean;
   applyGoogleTurnOrdering: boolean;
   validateGeminiTurns: boolean;
   validateAnthropicTurns: boolean;
@@ -93,6 +94,13 @@ export function resolveTranscriptPolicy(params: {
     modelId,
   });
 
+  const isCopilotClaude = provider === "github-copilot" && modelId.toLowerCase().includes("claude");
+
+  // GitHub Copilot's Claude endpoints can reject persisted `thinking` blocks with
+  // non-binary/non-base64 signatures (e.g. thinkingSignature: "reasoning_text").
+  // Drop these blocks at send-time to keep sessions usable.
+  const dropThinkingBlocks = isCopilotClaude;
+
   const needsNonImageSanitize = isGoogle || isAnthropic || isMistral || isOpenRouterGemini;
 
   // Enable for openai-completions (e.g. CLIProxyAPI 8317 for claude-cli/codex-cli) so tool_use.id
@@ -108,7 +116,7 @@ export function resolveTranscriptPolicy(params: {
   const sanitizeThoughtSignatures = isOpenRouterGemini
     ? { allowBase64Only: true, includeCamelCase: true }
     : undefined;
-  const normalizeAntigravityThinkingBlocks = isAntigravityClaudeModel;
+  const sanitizeThinkingSignatures = isAntigravityClaudeModel;
 
   return {
     sanitizeMode: isOpenAi ? "images-only" : needsNonImageSanitize ? "full" : "images-only",
@@ -117,7 +125,8 @@ export function resolveTranscriptPolicy(params: {
     repairToolUseResultPairing: !isOpenAi && repairToolUseResultPairing,
     preserveSignatures: isAntigravityClaudeModel,
     sanitizeThoughtSignatures: isOpenAi ? undefined : sanitizeThoughtSignatures,
-    normalizeAntigravityThinkingBlocks,
+    sanitizeThinkingSignatures,
+    dropThinkingBlocks,
     applyGoogleTurnOrdering: !isOpenAi && isGoogle,
     validateGeminiTurns: !isOpenAi && isGoogle,
     validateAnthropicTurns: !isOpenAi && isAnthropic,
