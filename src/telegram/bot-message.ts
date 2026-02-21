@@ -102,7 +102,6 @@ type TelegramMessageProcessorDeps = Omit<
   streamMode: TelegramStreamMode;
   textLimit: number;
   opts: Pick<TelegramBotOptions, "token">;
-  resolveBotTopicsEnabled: (ctx: TelegramContext) => boolean | Promise<boolean>;
 };
 
 // Legacy path must not appear in deliver stdout/inboxDir (reject with FATAL)
@@ -162,7 +161,7 @@ async function tryTlvcHardRoute(
   if (chatId == null || typeof chatId !== "number") {
     return false;
   }
-  const { homedir, tlvcDir, env } = getTlvcEnv();
+  const { homedir: _homedir, tlvcDir, env } = getTlvcEnv();
   const opts = threadId ? { message_thread_id: threadId } : {};
 
   await ensureTlvcCommands(bot);
@@ -718,7 +717,6 @@ export const createTelegramMessageProcessor = (deps: TelegramMessageProcessorDep
     streamMode,
     textLimit,
     opts,
-    resolveBotTopicsEnabled,
   } = deps;
 
   return async (
@@ -762,7 +760,6 @@ export const createTelegramMessageProcessor = (deps: TelegramMessageProcessorDep
       textLimit,
       telegramCfg,
       opts,
-      resolveBotTopicsEnabled,
     });
   };
 };

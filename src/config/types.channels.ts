@@ -2,6 +2,7 @@ import type { GroupPolicy } from "./types.base.js";
 import type { DiscordConfig } from "./types.discord.js";
 import type { GoogleChatConfig } from "./types.googlechat.js";
 import type { IMessageConfig } from "./types.imessage.js";
+import type { IrcConfig } from "./types.irc.js";
 import type { MSTeamsConfig } from "./types.msteams.js";
 import type { SignalConfig } from "./types.signal.js";
 import type { SlackConfig } from "./types.slack.js";
@@ -30,6 +31,8 @@ export type ChannelDefaultsConfig = {
 export type ExtensionChannelConfig = {
   enabled?: boolean;
   allowFrom?: string | string[];
+  /** Default delivery target for CLI --deliver when no explicit --reply-to is provided. */
+  defaultTo?: string;
   dmPolicy?: string;
   groupPolicy?: GroupPolicy;
   accounts?: Record<string, unknown>;
@@ -41,6 +44,7 @@ export type ChannelsConfig = {
   whatsapp?: WhatsAppConfig;
   telegram?: TelegramConfig;
   discord?: DiscordConfig;
+  irc?: IrcConfig;
   googlechat?: GoogleChatConfig;
   slack?: SlackConfig;
   signal?: SignalConfig;
