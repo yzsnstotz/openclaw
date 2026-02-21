@@ -27,6 +27,7 @@ import { resolveAgentRoute } from "../routing/resolve-route.js";
 import { resolveThreadSessionKeys } from "../routing/session-key.js";
 import { withTelegramApiErrorLogging } from "./api-logging.js";
 import {
+  firstDefined,
   isSenderAllowed,
   normalizeAllowFromWithStore,
   type NormalizedAllowFrom,
@@ -731,10 +732,13 @@ export const registerTelegramHandlers = ({
     } catch {
       /* fall through */
     }
+<<<<<<< HEAD
+=======
     const answerCallbackQuery =
       typeof (ctx as { answerCallbackQuery?: unknown }).answerCallbackQuery === "function"
         ? () => ctx.answerCallbackQuery()
         : () => bot.api.answerCallbackQuery(callback.id);
+>>>>>>> origin/main
     // Answer immediately to prevent Telegram from retrying while we process
     await withTelegramApiErrorLogging({
       operation: "answerCallbackQuery",
