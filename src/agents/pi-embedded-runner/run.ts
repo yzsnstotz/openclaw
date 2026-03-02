@@ -1,7 +1,5 @@
 import fs from "node:fs/promises";
 import type { ThinkLevel } from "../../auto-reply/thinking.js";
-import type { RunEmbeddedPiAgentParams } from "./run/params.js";
-import type { EmbeddedPiAgentMeta, EmbeddedPiRunResult } from "./types.js";
 import { getGlobalHookRunner } from "../../plugins/hook-runner-global.js";
 import { enqueueCommandInLane } from "../../process/command-queue.js";
 import { isMarkdownCapableMessageChannel } from "../../utils/message-channel.js";
@@ -19,7 +17,6 @@ import {
   resolveContextWindowInfo,
 } from "../context-window-guard.js";
 import { DEFAULT_CONTEXT_TOKENS, DEFAULT_MODEL, DEFAULT_PROVIDER } from "../defaults.js";
-import { loadConfig } from "../../../config/config.js";
 import { FailoverError, resolveFailoverStatus } from "../failover-error.js";
 import {
   ensureAuthProfileStore,
@@ -46,6 +43,7 @@ import {
   pickFallbackThinkingLevel,
   type FailoverReason,
 } from "../pi-embedded-helpers.js";
+import { loadConfig, loadSessionEntry, resolveSessionModelRef } from "../session-model-resolve.js";
 import { derivePromptTokens, normalizeUsage, type UsageLike } from "../usage.js";
 import { redactRunIdentifier, resolveRunWorkspaceDir } from "../workspace-run.js";
 import { compactEmbeddedPiSessionDirect } from "./compact.js";
@@ -53,16 +51,14 @@ import { resolveGlobalLane, resolveSessionLane } from "./lanes.js";
 import { log } from "./logger.js";
 import { resolveModel } from "./model.js";
 import { runEmbeddedAttempt } from "./run/attempt.js";
+import type { RunEmbeddedPiAgentParams } from "./run/params.js";
 import { buildEmbeddedRunPayloads } from "./run/payloads.js";
 import {
   truncateOversizedToolResultsInSession,
   sessionLikelyHasOversizedToolResults,
 } from "./tool-result-truncation.js";
+import type { EmbeddedPiAgentMeta, EmbeddedPiRunResult } from "./types.js";
 import { describeUnknownError } from "./utils.js";
-import {
-  loadSessionEntry,
-  resolveSessionModelRef,
-} from "../../../gateway/session-utils.js";
 
 type ApiKeyInfo = ResolvedProviderAuth;
 
@@ -225,15 +221,8 @@ export async function runEmbeddedPiAgent(
         try {
           const cfg = params.config ?? loadConfig();
           const { entry } = loadSessionEntry(sessionKeyForRun, { skipCache: true });
-          if (
-            entry &&
-            (entry.modelOverride?.trim() || entry.providerOverride?.trim())
-          ) {
-            const ref = resolveSessionModelRef(
-              cfg,
-              entry,
-              workspaceResolution.agentId,
-            );
+          if (entry && (entry.modelOverride?.trim() || entry.providerOverride?.trim())) {
+            const ref = resolveSessionModelRef(cfg, entry, workspaceResolution.agentId);
             provider = ref.provider ?? provider;
             modelId = ref.model ?? modelId;
           }
