@@ -183,13 +183,16 @@ export function deriveSessionTitle(
   return undefined;
 }
 
-export function loadSessionEntry(sessionKey: string) {
+export function loadSessionEntry(
+  sessionKey: string,
+  opts?: { skipCache?: boolean },
+) {
   const cfg = loadConfig();
   const sessionCfg = cfg.session;
   const canonicalKey = resolveSessionStoreKey({ cfg, sessionKey });
   const agentId = resolveSessionStoreAgentId(cfg, canonicalKey);
   const storePath = resolveStorePath(sessionCfg?.store, { agentId });
-  const store = loadSessionStore(storePath);
+  const store = loadSessionStore(storePath, opts);
   const match = findStoreMatch(store, canonicalKey, sessionKey.trim());
   const legacyKey = match?.key !== canonicalKey ? match?.key : undefined;
   return { cfg, storePath, store, entry: match?.entry, canonicalKey, legacyKey };

@@ -19,6 +19,7 @@ import {
   resolveContextWindowInfo,
 } from "../context-window-guard.js";
 import { DEFAULT_CONTEXT_TOKENS, DEFAULT_MODEL, DEFAULT_PROVIDER } from "../defaults.js";
+import { loadConfig } from "../../../config/config.js";
 import { FailoverError, resolveFailoverStatus } from "../failover-error.js";
 import {
   ensureAuthProfileStore,
@@ -58,6 +59,10 @@ import {
   sessionLikelyHasOversizedToolResults,
 } from "./tool-result-truncation.js";
 import { describeUnknownError } from "./utils.js";
+import {
+  loadSessionEntry,
+  resolveSessionModelRef,
+} from "../../../gateway/session-utils.js";
 
 type ApiKeyInfo = ResolvedProviderAuth;
 
@@ -212,6 +217,33 @@ export async function runEmbeddedPiAgent(
 
       let provider = (params.provider ?? DEFAULT_PROVIDER).trim() || DEFAULT_PROVIDER;
       let modelId = (params.model ?? DEFAULT_MODEL).trim() || DEFAULT_MODEL;
+
+      // Re-load session entry at run time so that model selection changes (e.g. from
+      // Telegram /model) are applied even when the run was enqueued before the switch.
+      const sessionKeyForRun = params.sessionKey?.trim();
+      if (sessionKeyForRun && !isProbeSession) {
+        try {
+          const cfg = params.config ?? loadConfig();
+          const { entry } = loadSessionEntry(sessionKeyForRun, { skipCache: true });
+          if (
+            entry &&
+            (entry.modelOverride?.trim() || entry.providerOverride?.trim())
+          ) {
+            const ref = resolveSessionModelRef(
+              cfg,
+              entry,
+              workspaceResolution.agentId,
+            );
+            provider = ref.provider ?? provider;
+            modelId = ref.model ?? modelId;
+          }
+        } catch (err) {
+          log.warn(
+            `[run] could not re-load session for model override: ${describeUnknownError(err)}`,
+          );
+        }
+      }
+
       const agentDir = params.agentDir ?? resolveOpenClawAgentDir();
       const fallbackConfigured =
         (params.config?.agents?.defaults?.model?.fallbacks?.length ?? 0) > 0;
